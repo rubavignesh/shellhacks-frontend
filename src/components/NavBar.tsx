@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import tw from "tailwind-styled-components";
+import { Link } from "react-router-dom";
 import { XIcon } from "@heroicons/react/solid";
 
-const TSIcon = require("../assets/icons/TSIcon.png");
+// Icons for the navbar tabs
+const PIcon = require("../assets/icons/PIcon1.png");
+const JIcon = require("../assets/icons/JIcon1.png");
+const TIcon = require("../assets/icons/TIcon1.png");
+const SIcon = require("../assets/icons/SIcon1.png");
 
 const Container = tw.div`
   h-full 
@@ -27,103 +32,83 @@ interface Props {
 const NavBar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
   const [closedTabs, setClosedTabs] = useState<string[]>([]);
 
+  // Ensure the active tab is not in closedTabs
+  if (closedTabs.includes(activeTab)) {
+    setClosedTabs(closedTabs.filter(tab => tab !== activeTab));
+  }
+
+  // Helper function to handle tab closing
+  const handleCloseTab = (e: React.MouseEvent, tabName: string) => {
+    e.stopPropagation();
+    setClosedTabs((prevState) => [...prevState, tabName]);
+    setActiveTab('pomo'); 
+  };
+
   return (
     <div className="flex flex-row h-full">
+      {/* Pomodoro Tab */}
       <Container
-        className={
-          activeTab === "home"
-            ? "bg-[#1e1e1e] text-yellow_vs"
-            : "hover:bg-[#1e1e1e] hover:text-yellow_vs"
-        }
-        onClick={() => {
-          setActiveTab("home");
-        }}
+        className={activeTab === "pomo" ? "bg-[#1e1e1e] text-yellow_vs" : "hover:bg-[#1e1e1e] hover:text-yellow_vs"}
+        onClick={() => setActiveTab("pomo")}
       >
-        <img src={TSIcon} alt="JS Icon" className="w-7 mr-1  text-yellow_vs" />
-        Home.ts
+        <Link to="/" className="flex items-center">
+          <img src={PIcon} alt="Pomo Icon" className="w-13 h-12 mr-1 text-yellow_vs" style={{marginRight : "0px"}} />
+          Pomo
+        </Link>
       </Container>
 
-      {closedTabs.includes("about") ? null : (
+      {/* Todos Tab */}
+      {!closedTabs.includes("todos") && (
         <Container
-          hidden={"about" in closedTabs}
-          className={
-            activeTab === "about"
-              ? "bg-[#1e1e1e] text-yellow_vs"
-              : "hover:bg-[#1e1e1e] hover:text-yellow_vs"
-          }
-          onClick={() => {
-            setActiveTab("about");
-          }}
+          className={activeTab === "todos" ? "bg-[#1e1e1e] text-yellow_vs" : "hover:bg-[#1e1e1e] hover:text-yellow_vs"}
+          onClick={() => setActiveTab("todos")}
         >
-          <img
-            src={TSIcon}
-            alt="JS Icon"
-            className="w-7 mr-1  text-yellow_vs"
-          />
-          About.ts
-          <XIcon
-            className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveTab("home");
-              setClosedTabs((prevState) => [...prevState, "about"]);
-            }}
-          />
+          <Link to="/todos" className="flex items-center">
+            <img src={TIcon} alt="Todos Icon" className="w-7 mr-1 text-yellow_vs" style={{marginRight : "10px"}} />
+            Todos
+            <XIcon
+              className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
+              onClick={(e) => handleCloseTab(e, "todos")}
+            />
+          </Link>
         </Container>
       )}
 
-      {closedTabs.includes("resume") ? null : (
+      {/* Job Tab */}
+      {!closedTabs.includes("job") && (
         <Container
-          className={
-            activeTab === "resume"
-              ? "bg-[#1e1e1e] text-yellow_vs"
-              : "hover:bg-[#1e1e1e] hover:text-yellow_vs"
-          }
-          onClick={() => {
-            setActiveTab("resume");
-          }}
+          className={activeTab === "job" ? "bg-[#1e1e1e] text-yellow_vs" : "hover:bg-[#1e1e1e] hover:text-yellow_vs"}
+          onClick={() => setActiveTab("job")}
         >
-          <img
-            src={TSIcon}
-            alt="JS Icon"
-            className="w-7 mr-1  text-yellow_vs"
-          />
-          Resume.ts
-          <XIcon
-            className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveTab("home");
-              setClosedTabs((prevState) => [...prevState, "resume"]);
-            }}
-          />
+          <Link to="/job" className="flex items-center">
+            <img src={JIcon} alt="Job Icon" className="w-12 h-10 mr-1 text-yellow_vs" style={{marginRight : "4px"}} />
+            Job
+            <XIcon
+              className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
+              onClick={(e) => handleCloseTab(e, "job")}
+            />
+          </Link>
         </Container>
       )}
 
-      {closedTabs.includes("contact") ? null : (
+      {/* Settings Tab */}
+      {!closedTabs.includes("settings") && (
         <Container
-          className={
-            activeTab === "contact"
-              ? "bg-[#1e1e1e] text-yellow_vs"
-              : "hover:bg-[#1e1e1e] hover:text-yellow_vs"
-          }
-          onClick={() => {
-            setActiveTab("contact");
-          }}
+          className={activeTab === "settings" ? "bg-[#1e1e1e] text-yellow_vs" : "hover:bg-[#1e1e1e] hover:text-yellow_vs"}
+          onClick={() => setActiveTab("settings")}
         >
-          <img src={TSIcon} alt="JS Icon" className="w-7 mr-1 text-yellow_vs" />
-          Contact.ts
-          <XIcon
-            className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveTab("home");
-              setClosedTabs((prevState) => [...prevState, "contact"]);
-            }}
-          />
+          <Link to="/settings" className="flex items-center">
+            <img src={SIcon} alt="Settings Icon" className="w-6 mr-1 text-yellow_vs" style={{marginRight : "12px"}} />
+            Settings
+            <XIcon
+              className="w-6 ml-4 hover:bg-gray-600 hover:rounded"
+              onClick={(e) => handleCloseTab(e, "settings")}
+            />
+          </Link>
         </Container>
       )}
     </div>
   );
 };
+
 export default NavBar;

@@ -1,164 +1,198 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/solid";
+import React, { useState, useRef, useEffect } from "react";
+import RubaImage from "../assets/Ruba.jpg"; // Adjust the path according to your folder structure
+import LogoImage from "../assets/icons/Goalden_LogoSB.png"; // Import the logo image
+import { Link } from "react-router-dom";
+import YouTube from 'react-youtube'; // Import YouTube player
+import "@fortawesome/fontawesome-free/css/all.min.css"; // Import Font Awesome styles
 
-const GitLogo = require("../assets/logos/GitLogo.png");
-const LinkedinLogo = require("../assets/logos/LinkedinLogo.png");
-const KaggleLogo = require("../assets/logos/KaggleLogo.png");
-const MailLogo = require("../assets/logos/MailLogo.png");
+interface SideBarProps {
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+}
 
-const JSIcon = require("../assets/icons/JSIcon.png");
-const TSIcon = require("../assets/icons/TSIcon.png");
+const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
+  const fixedWidth = 250; // Set your desired fixed width here
 
-const SideBar = ({
-  setWidth,
-  width,
-}: {
-  setWidth: React.Dispatch<React.SetStateAction<number>>;
-  width: number;
-}) => {
-  const [showWebList, SetShowWebList] = useState(true);
-  const [showProjectsList, SetShowProjectsList] = useState(true);
+  const [playlistId, setPlaylistId] = useState<string>(() => localStorage.getItem('playlistId') || ""); // Load from localStorage
+  const [currentSongTitle, setCurrentSongTitle] = useState<string>(""); // State to store the current song's title
+  const [isPlaying, setIsPlaying] = useState<boolean>(false); // State to check if the player is playing
+  const playerRef = useRef<any>(null); // Reference to control the YouTube player
 
-  const startResizing = (mouseDownEvent: React.MouseEvent) => {
-    const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-      const delta = mouseMoveEvent.clientX - mouseDownEvent.clientX;
-      const newWidth = Math.max(170, mouseDownEvent.clientX + delta);
-      setWidth(newWidth);
-    };
+  // Save playlistId to localStorage whenever it changes
+  useEffect(() => {
+    if (playlistId) {
+      localStorage.setItem('playlistId', playlistId);
+    }
+  }, [playlistId]);
 
-    const handleMouseUp = () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
+  // Save playing state in localStorage
+  useEffect(() => {
+    localStorage.setItem('isPlaying', JSON.stringify(isPlaying));
+  }, [isPlaying]);
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+  // Retrieve the playing state from localStorage and play the video if needed
+  useEffect(() => {
+    const savedIsPlaying = JSON.parse(localStorage.getItem('isPlaying') || "false");
+    if (savedIsPlaying && playerRef.current) {
+      playerRef.current.playVideo();
+      setIsPlaying(true);
+    }
+  }, []);
+
+  // YouTube player options for audio-only mode
+  const opts = {
+    height: '0', // Hide the video
+    width: '0',  // Hide the video
+    playerVars: {
+      autoplay: 1, // Autoplay is on when loaded
+      listType: 'playlist',
+      list: playlistId, // Use the dynamic playlist ID
+      mute: 1, // Mute the player to allow autoplay (many browsers block autoplay if not muted)
+      loop: 1, // Loop the playlist
+      enablejsapi: 1, // Enable JS API for player control
+    },
   };
 
-  useEffect(() => {
-    const savedWidth = localStorage.getItem("sideBarWidth");
-    if (savedWidth) {
-      setWidth(parseInt(savedWidth));
+  // Function to handle player ready state
+  const onPlayerReady = (event: any) => {
+    playerRef.current = event.target; // Store the player instance in the ref
+    const savedIsPlaying = JSON.parse(localStorage.getItem('isPlaying') || "false");
+
+    if (savedIsPlaying) {
+      playerRef.current.playVideo();
+      setIsPlaying(true);
     }
-  }, [setWidth]);
+  };
+
+  // Function to toggle play/pause
+  const handlePlayPause = () => {
+    if (playerRef.current) {
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+      } else {
+        playerRef.current.playVideo();
+      }
+      setIsPlaying(!isPlaying); // Toggle playing state
+    }
+  };
+
+  // Function to go to the previous song
+  const handlePrevious = () => {
+    if (playerRef.current) {
+      playerRef.current.previousVideo();
+    }
+  };
+
+  // Function to go to the next song
+  const handleNext = () => {
+    if (playerRef.current) {
+      playerRef.current.nextVideo();
+    }
+  };
+
+  // Function to update the song title when a new song starts playing
+  const onPlayerStateChange = (event: any) => {
+    if (window.YT) {
+      if (event.data === window.YT.PlayerState.PLAYING && playerRef.current) {
+        const videoData = playerRef.current.getVideoData();
+        setCurrentSongTitle(videoData.title);
+        setIsPlaying(true);
+      }
+      if (event.data === window.YT.PlayerState.PAUSED) {
+        setIsPlaying(false);
+      }
+    }
+  };
 
   return (
-    <div className="flex h-full">
-      <div className="text-[#a2aabc] text-lg mt-5 flex w-full">
-        <div>
-          <div
-            className="flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a] font-bold"
-            onClick={() => SetShowProjectsList(!showProjectsList)}
-          >
-            {showProjectsList ? (
-              <ChevronDownIcon className="w-7 mr-1" />
-            ) : (
-              <ChevronRightIcon className="w-7 mr-1" />
-            )}
-            <p>Projects</p>
-          </div>
-          {showProjectsList ? (
-            <>
-              <div
-                className="flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a] font-bold"
-                onClick={() => SetShowWebList(!showWebList)}
-              >
-                {showWebList ? (
-                  <ChevronDownIcon className="w-7 mr-1  ml-5" />
-                ) : (
-                  <ChevronRightIcon className="w-7 mr-1  ml-5" />
-                )}
-
-                <p>Web</p>
-              </div>
-              {showWebList ? <WebList /> : null}
-            </>
-          ) : null}
-          <div className="absolute w-full bottom-10 px-6">
-            <div className="flex justify-between">
-              <a href="/">
-                <img
-                  src={GitLogo}
-                  alt="Git Logo"
-                  className="h-10 w-10 text-yellow_vs hover:cursor-pointer duration-500 hover:scale-125"
-                />
-              </a>
-              <a href="/">
-                <img
-                  src={KaggleLogo}
-                  alt="Kaggle Logo"
-                  className="h-10 w-10 text-yellow_vs hover:cursor-pointer duration-500 hover:scale-125"
-                />
-              </a>
-              <a href="/">
-                <img
-                  src={LinkedinLogo}
-                  alt="Linkedin Logo"
-                  className="h-10 w-10 text-yellow_vs hover:cursor-pointer duration-500 hover:scale-125"
-                />
-              </a>
-              <a href="/">
-                <img
-                  src={MailLogo}
-                  alt="Mail Logo"
-                  className="h-10 w-10 text-yellow_vs hover:cursor-pointer duration-500 hover:scale-125"
-                />
-              </a>
-            </div>
-          </div>
-        </div>
+    <div
+      className="flex h-full bg-[#1e1e1e] text-white flex-col items-center py-8"
+      style={{ width: `${fixedWidth}px` }}
+    >
+      {/* Logo Image */}
+      <div className="relative w-full flex justify-center mb-3">
+        <img
+          src={LogoImage}
+          alt="Logo"
+          className="absolute top-[15px] w-48" // Adjust top and width to position like a rainbow
+          style={{ zIndex: 1 }}
+        />
       </div>
-      <div
-        className="bg-[#262526] h-full border-r border-gray-700 border-opacity-50 hover:border-opacity-100 hover:border-blue-500 w-3 hover:cursor-col-resize"
-        onMouseDown={startResizing}
-      ></div>
+
+      {/* Profile Picture and Greeting */}
+      <img
+        src={RubaImage}
+        alt="Profile"
+        className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
+        style={{ zIndex: 2 }}
+      />
+      <h2 className="text-xl font-bold mb-3">Hi Ruba!</h2>
+
+      {/* Horizontal line */}
+      <hr className="w-3/4 border-t border-white mb-8" />
+
+      {/* Navigation Links */}
+      <div className="flex flex-col space-y-4 mb-8">
+        <Link to="/" className="cursor-pointer font-bold" onClick={() => setActiveTab('pomo')}>
+          Pomo
+        </Link>
+        <Link to="/todos" className="cursor-pointer font-bold" onClick={() => setActiveTab('todos')}>
+          Todos
+        </Link>
+        <Link to="/job" className="cursor-pointer font-bold" onClick={() => setActiveTab('job')}>
+          Job
+        </Link>
+        <Link to="/settings" className="cursor-pointer font-bold" onClick={() => setActiveTab('settings')}>
+          Settings
+        </Link>
+      </div>
+
+      {/* Invisible spacer to push content to the top */}
+      <div className="flex-grow"></div>
+
+      {/* Input field to enter playlist ID */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Enter Playlist ID"
+          value={playlistId}
+          onChange={(e) => setPlaylistId(e.target.value)}
+          className="p-2 bg-[#333] text-white rounded-md outline-none"
+        />
+      </div>
+
+      {/* Display Current Song Title */}
+      {currentSongTitle && (
+        <div className="mb-2 text-center">
+          <h3 className="text-sm font-bold">{currentSongTitle}</h3>
+        </div>
+      )}
+
+      {/* Previous, Play/Pause, and Next Icons */}
+      {playlistId && (
+        <div className="mb-4 flex space-x-4">
+          {/* Previous Icon */}
+          <button onClick={handlePrevious} className="text-white text-2xl">
+            <i className="fas fa-step-backward"></i>
+          </button>
+          {/* Play/Pause Icon */}
+          <button onClick={handlePlayPause} className="text-white text-2xl">
+            {isPlaying ? <i className="fas fa-pause"></i> : <i className="fas fa-play"></i>}
+          </button>
+          {/* Next Icon */}
+          <button onClick={handleNext} className="text-white text-2xl">
+            <i className="fas fa-step-forward"></i>
+          </button>
+        </div>
+      )}
+
+      {/* YouTube Audio Player (Hidden) */}
+      {playlistId && (
+        <div style={{ height: '0px', width: '0px', overflow: 'hidden' }}>
+          <YouTube videoId="" opts={opts} onReady={onPlayerReady} onStateChange={onPlayerStateChange} />
+        </div>
+      )}
     </div>
   );
 };
 
 export default SideBar;
-
-const WebList = () => (
-  <div className="flex flex-col">
-    <a href="/">
-      <div className="ml-12 flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a]">
-        <img
-          src={JSIcon}
-          alt="JS Icon"
-          className="w-7 mr-1  ml-5 text-yellow_vs"
-        />
-        <p>First Project</p>
-      </div>
-    </a>
-    <a href="/">
-      <div className="ml-12 flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a]">
-        <img
-          src={TSIcon}
-          alt="TS Icon"
-          className="w-7 mr-1  ml-5 text-yellow_vs"
-        />
-        <p>Second Project</p>
-      </div>
-    </a>
-    <a href="/">
-      <div className="flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a] focus:bg-slate-300 ml-12">
-        <img
-          src={JSIcon}
-          alt="JS Icon"
-          className="w-7 mr-1  ml-5 text-yellow_vs"
-        />
-        <p>Third Project</p>
-      </div>
-    </a>
-    <a href="/">
-      <div className="flex items-center hover:cursor-pointer hover:bg-opacity-80 hover:bg-[#2b2a2a] ml-12">
-        <img
-          src={JSIcon}
-          alt="JS Icon"
-          className="w-7 mr-1  ml-5 text-yellow_vs"
-        />
-        <p>Fourth Project</p>
-      </div>
-    </a>
-  </div>
-);
