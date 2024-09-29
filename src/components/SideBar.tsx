@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import RubaImage from "../assets/Ruba.jpg"; // Adjust the path according to your folder structure
 import LogoImage from "../assets/icons/Goalden_LogoSB.png"; // Import the logo image
 import { Link } from "react-router-dom";
 import YouTube from 'react-youtube'; // Import YouTube player

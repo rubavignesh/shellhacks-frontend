@@ -1,8 +1,31 @@
 import React, { useState } from "react";
 import { TrashIcon, PlusIcon, XIcon } from "@heroicons/react/solid"; // Import the XIcon from heroicons
 import Layout from "./Layout"; // Adjust the path to your Layout component
+import axios from "axios";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const Todos = () => {
+  const { user } = useAuth0();
+  const [userId, setUserId] = useState(null);
+
+  const getUserByUsername = async () => {
+    try {
+      const response = await axios.post(`http://10.108.140.94:8080/users/name`, { name: user.name });
+      if (response.data && response.data.length > 0) {
+        const fetchedUserId = response.data[0]._id;
+        setUserId(fetchedUserId);
+        console.log("User ID:", fetchedUserId);
+        return fetchedUserId;
+      } else {
+        console.log("User not found");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching user by username:", error);
+      return null;
+    }
+  };
+  
   // Initial state for the draggable cards
   const [cards, setCards] = useState([
     {
@@ -58,17 +81,42 @@ const Todos = () => {
   };
 
   // Function to handle adding a new card
-  const addCard = () => {
+  const addCard = async () => {
+    getUserByUsername();
     const title = prompt("Enter a title for the new card:");
     if (title) {
-      const newCard = {
-        id: cards.length + 1,
-        title,
-        tasks: [],
-        position: { x: 100 + cards.length * 150, y: 100 }, // Adjust starting position
-        defaultPosition: { x: 100 + cards.length * 150, y: 100 },
+      console.log("Starting API call to add a new card...");
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'http://10.108.140.94:8080/notes/' + userId + '/create',
+        data: {
+          title,
+          description: '',
+          tasks: [],
+          userId: userId
+        },
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+        }
       };
-      setCards([...cards, newCard]);
+
+      try {
+        const response = await axios.request(config);
+        console.log("POST response:", response.data);
+        const newCard = {
+          id: response.data.newNote._id,
+          title: response.data.newNote.title,
+          tasks: [],
+          userId: userId,
+          position: { x: 100 + cards.length * 150, y: 100 },
+          defaultPosition: { x: 100 + cards.length * 150, y: 100 },
+        };
+        setCards([...cards, newCard]);
+      } catch (error) {
+        console.error('Error adding card:', error);
+      }
     }
   };
 

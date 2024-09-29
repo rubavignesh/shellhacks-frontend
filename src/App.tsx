@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -10,7 +10,7 @@ import { TimerProvider } from "./context/TimerContext"; // Import the TimerProvi
 
 function App() {
   const { user, isAuthenticated } = useAuth0();
-
+  const [userId, setUserId] = useState(null);
   useEffect(() => {
     const existingWidth = localStorage.getItem("sideBarWidth");
 
@@ -45,6 +45,9 @@ function App() {
               registerUser();
             } else {
               console.log("User already exists:", response.data);
+              setUserId(response.data[0]._id); // Set the userId in the UserContext
+              console.log("User ID:", userId);
+
             }
           })
           .catch(error => {
@@ -86,6 +89,8 @@ function App() {
       axios.request(postConfig)
         .then(postResponse => {
           console.log("User saved successfully:", postResponse.data);
+          setUserId(postResponse.data._id);
+          console.log("User ID:", userId);
         })
         .catch(postError => {
           if (postError.response && postError.response.status === 500) {
@@ -97,7 +102,7 @@ function App() {
     };
 
     checkUser();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, userId]);
 
   return (
     <TimerProvider>
@@ -110,6 +115,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </TimerProvider>
+    
   );
 }
 

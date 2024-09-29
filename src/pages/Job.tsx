@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Layout from "./Layout"; // Adjust the import path according to your folder structure
+import axios from "axios";
 
 const Job = () => {
   const [currentTab, setCurrentTab] = useState("tracker");
@@ -8,6 +9,22 @@ const Job = () => {
   const [location, setLocation] = useState(""); // State for location
   const [datePosted, setDatePosted] = useState("Any time"); // State for date posted
   const [experienceLevel, setExperienceLevel] = useState("Internship"); // State for experience level
+
+  const handleSearch = async () => {
+    try {
+      const response = await axios.post("http://10.108.140.94:8080/jobs/search", {
+        jobTitle: preferredRole,
+        postingTime: datePosted,
+        location: location,
+        experienceLevel: experienceLevel,
+      });
+      const { linkedInLink } = response.data;
+      console.log("LinkedIn Link:", linkedInLink);
+      window.open(linkedInLink, "_blank");
+    } catch (error) {
+      console.error("Error fetching LinkedIn search URL:", error);
+    }
+  };
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -141,7 +158,10 @@ const Job = () => {
                 </div>
               </div>
 
-              <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
+              <button
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
+                onClick={handleSearch}
+              >
                 Take me to the 🚀
               </button>
             </div>
