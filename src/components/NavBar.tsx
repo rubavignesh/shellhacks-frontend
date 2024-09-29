@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import tw from "tailwind-styled-components";
 import { Link } from "react-router-dom";
 import { XIcon } from "@heroicons/react/solid";
+import { useAuth0 } from '@auth0/auth0-react';
 
 // Icons for the navbar tabs
 const PIcon = require("../assets/icons/PIcon1.png");
@@ -31,6 +32,7 @@ interface Props {
 
 const NavBar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
   const [closedTabs, setClosedTabs] = useState<string[]>([]);
+  const { isAuthenticated, loginWithRedirect, logout, user } = useAuth0(); 
 
   // Ensure the active tab is not in closedTabs
   if (closedTabs.includes(activeTab)) {
@@ -45,7 +47,7 @@ const NavBar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <div className="flex flex-row h-full">
+    <div className="flex flex-row h-full relative">
       {/* Pomodoro Tab */}
       <Container
         className={activeTab === "pomo" ? "bg-[#1e1e1e] text-yellow_vs" : "hover:bg-[#1e1e1e] hover:text-yellow_vs"}
@@ -107,6 +109,23 @@ const NavBar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
           </Link>
         </Container>
       )}
+
+      {/* Authentication Buttons */}
+      <div className="absolute right-0 top-0 h-full flex items-center pr-4">
+        {isAuthenticated ? (
+          <div className="flex items-center">
+            <img src={user?.picture} alt="Profile" className="w-8 h-8 rounded-full mr-2" />
+            <span className="text-white">{user?.name}</span>
+            <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="ml-4 text-white">
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => loginWithRedirect()} className="text-white">
+            Login
+          </button>
+        )}
+      </div>
     </div>
   );
 };

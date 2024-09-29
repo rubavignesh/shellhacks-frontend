@@ -4,6 +4,7 @@ import LogoImage from "../assets/icons/Goalden_LogoSB.png"; // Import the logo i
 import { Link } from "react-router-dom";
 import YouTube from 'react-youtube'; // Import YouTube player
 import "@fortawesome/fontawesome-free/css/all.min.css"; // Import Font Awesome styles
+import { useAuth0 } from "@auth0/auth0-react"; // Import Auth0 hooks
 
 interface SideBarProps {
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
@@ -16,6 +17,8 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
   const [currentSongTitle, setCurrentSongTitle] = useState<string>(""); // State to store the current song's title
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // State to check if the player is playing
   const playerRef = useRef<any>(null); // Reference to control the YouTube player
+
+  const { isAuthenticated, loginWithRedirect, logout, user } = useAuth0(); // Destructure Auth0 hooks
 
   // Save playlistId to localStorage whenever it changes
   useEffect(() => {
@@ -119,13 +122,27 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
       </div>
 
       {/* Profile Picture and Greeting */}
-      <img
-        src={RubaImage}
-        alt="Profile"
-        className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
-        style={{ zIndex: 2 }}
-      />
-      <h2 className="text-xl font-bold mb-3">Hi Ruba!</h2>
+      {isAuthenticated ? (
+        <>
+          <img
+            src={user?.picture}
+            alt="Profile"
+            className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
+            style={{ zIndex: 2 }}
+          />
+          <h2 className="text-xl font-bold mb-3">Hi {user?.name}!</h2>
+        </>
+      ) : (
+        <>
+          <img
+            src="https://via.placeholder.com/150" 
+            alt="Default Profile"
+            className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
+            style={{ zIndex: 2 }}
+          />
+          <h2 className="text-xl font-bold mb-3">Welcome, Guest!</h2>
+        </>
+      )}
 
       {/* Horizontal line */}
       <hr className="w-3/4 border-t border-white mb-8" />
@@ -191,6 +208,19 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
           <YouTube videoId="" opts={opts} onReady={onPlayerReady} onStateChange={onPlayerStateChange} />
         </div>
       )}
+
+      {/* Authentication Buttons */}
+      <div className="mt-4">
+        {isAuthenticated ? (
+          <button onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="text-white">
+            Logout
+          </button>
+        ) : (
+          <button onClick={() => loginWithRedirect()} className="text-white">
+            Login
+          </button>
+        )}
+      </div>
     </div>
   );
 };
