@@ -1,6 +1,7 @@
 import React from "react";
 import { IdentificationIcon } from "@heroicons/react/solid";
 import List from "../components/List";
+import Profile from "../components/Profile";
 
 const PythonLogo = require("../assets/logos/PythonLogo.png");
 const ReactLogo = require("../assets/logos/ReactLogo.png");
@@ -45,6 +46,7 @@ const About = () => {
           <div className="table-cell border-b border-b-[#e6f1ff] border-opacity-25 w-full"></div>
         </div>
         <div className="text-[#a2aabc] text-lg mt-5">
+        <Profile />
           <code>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed id eros
             non nisi vulputate eleifend. Vestibulum erat ipsum, lacinia ut nibh

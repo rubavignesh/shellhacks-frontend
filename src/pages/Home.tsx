@@ -6,11 +6,16 @@ import Resume from "./Resume";
 import MobileMenu from "../components/MobileMenu";
 import Header from "../components/Header";
 import NavBar from "../components/NavBar";
+// import LoginButton from "../components/LoginButton";
+// import LogoutButton from "../components/LogoutButton";
+// import { useAuth0 } from "@auth0/auth0-react";
+// import Profile from "../components/Profile";
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [sidebarWidth, setSidebarWidth] = useState(270); // Default width
-
+  // const { isAuthenticated } = useAuth0();
+  // console.log(isAuthenticated);
   useEffect(() => {
     const savedWidth = localStorage.getItem("sideBarWidth");
     if (savedWidth) {
@@ -46,6 +51,19 @@ const Home = () => {
             <About />
             <Resume />
             <Contact />
+            {/* <button className="bg-white text-black py-2 px-4 rounded">
+              <LoginButton />
+            </button>
+            <button className="bg-white text-black py-2 px-4 rounded">
+              <LogoutButton />
+            </button>
+            
+            <div className="bg-white text-black py-2 px-4 rounded">
+              <Profile />
+            </div> */}
+
+            {/* Buttons for Auth0 */}
+
           </div>
         )}
         {activeTab === "about" &&  <div style={{ paddingLeft: `${sidebarWidth}px` }}><About /></div>}
