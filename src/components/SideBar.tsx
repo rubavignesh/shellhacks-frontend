@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import RubaImage from "../assets/Ruba.jpg"; // Adjust the path according to your folder structure
+import BitooImage from "../assets/Bitoo.jpg"; // Adjust the path according to your folder structure
 import LogoImage from "../assets/icons/Goalden_LogoSB.png"; // Import the logo image
 import { Link } from "react-router-dom";
 import YouTube from 'react-youtube'; // Import YouTube player
@@ -12,9 +12,15 @@ interface SideBarProps {
 const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
   const fixedWidth = 250; // Set your desired fixed width here
 
-  const [playlistId, setPlaylistId] = useState<string>(() => localStorage.getItem('playlistId') || ""); // Load from localStorage
+  // Sanitize playlist ID if it has "start_radio=1" or other query parameters
+  const sanitizePlaylistId = (id: string) => {
+    return id.split('&')[0]; // Strip out any parameters after "&"
+  };
+
+  const [playlistId, setPlaylistId] = useState<string>(() => sanitizePlaylistId(localStorage.getItem('playlistId') || "")); // Load from localStorage
   const [currentSongTitle, setCurrentSongTitle] = useState<string>(""); // State to store the current song's title
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // State to check if the player is playing
+  const [volume, setVolume] = useState<number>(50); // Default volume set to 50
   const playerRef = useRef<any>(null); // Reference to control the YouTube player
 
   // Save playlistId to localStorage whenever it changes
@@ -45,8 +51,8 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
     playerVars: {
       autoplay: 1, // Autoplay is on when loaded
       listType: 'playlist',
-      list: playlistId, // Use the dynamic playlist ID
-      mute: 1, // Mute the player to allow autoplay (many browsers block autoplay if not muted)
+      list: sanitizePlaylistId(playlistId), // Sanitize playlist ID for radio playlists
+      mute: 1, // Start muted for autoplay to work
       loop: 1, // Loop the playlist
       enablejsapi: 1, // Enable JS API for player control
     },
@@ -61,6 +67,14 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
       playerRef.current.playVideo();
       setIsPlaying(true);
     }
+    playerRef.current.setVolume(volume); // Set initial volume
+  };
+
+  // Unmute after the video has started playing
+  const unmutePlayer = () => {
+    if (playerRef.current && playerRef.current.isMuted()) {
+      playerRef.current.unMute(); // Unmute the player after it has started
+    }
   };
 
   // Function to toggle play/pause
@@ -70,6 +84,7 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
         playerRef.current.pauseVideo();
       } else {
         playerRef.current.playVideo();
+        unmutePlayer(); // Unmute if starting playback
       }
       setIsPlaying(!isPlaying); // Toggle playing state
     }
@@ -96,10 +111,20 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
         const videoData = playerRef.current.getVideoData();
         setCurrentSongTitle(videoData.title);
         setIsPlaying(true);
+        unmutePlayer(); // Unmute when a new song starts
       }
       if (event.data === window.YT.PlayerState.PAUSED) {
         setIsPlaying(false);
       }
+    }
+  };
+
+  // Function to handle volume changes
+  const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseInt(event.target.value, 10);
+    setVolume(newVolume); // Update volume state
+    if (playerRef.current) {
+      playerRef.current.setVolume(newVolume); // Set the volume on the YouTube player
     }
   };
 
@@ -120,12 +145,12 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
 
       {/* Profile Picture and Greeting */}
       <img
-        src={RubaImage}
+        src={BitooImage}
         alt="Profile"
         className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
         style={{ zIndex: 2 }}
       />
-      <h2 className="text-xl font-bold mb-3">Hi Ruba!</h2>
+      <h2 className="text-xl font-bold mb-3">Hi Bitoo!</h2>
 
       {/* Horizontal line */}
       <hr className="w-3/4 border-t border-white mb-8" />
@@ -155,7 +180,7 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
           type="text"
           placeholder="Enter Playlist ID"
           value={playlistId}
-          onChange={(e) => setPlaylistId(e.target.value)}
+          onChange={(e) => setPlaylistId(sanitizePlaylistId(e.target.value))}
           className="p-2 bg-[#333] text-white rounded-md outline-none"
         />
       </div>
@@ -185,10 +210,28 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
         </div>
       )}
 
+      {/* Volume Slider */}
+      {playlistId && (
+        <div className="w-full flex justify-center mt-4">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="w-3/4"
+          />
+        </div>
+      )}
+
       {/* YouTube Audio Player (Hidden) */}
       {playlistId && (
         <div style={{ height: '0px', width: '0px', overflow: 'hidden' }}>
-          <YouTube videoId="" opts={opts} onReady={onPlayerReady} onStateChange={onPlayerStateChange} />
+          <YouTube 
+            opts={opts} 
+            onReady={onPlayerReady} 
+            onStateChange={onPlayerStateChange} 
+          />
         </div>
       )}
     </div>
