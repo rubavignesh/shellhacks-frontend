@@ -12,7 +12,7 @@ const Job = () => {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.post("http://10.108.140.94:8080/jobs/search", {
+      const response = await axios.post("http://192.168.1.204:5001/jobs/search", {
         jobTitle: preferredRole,
         postingTime: datePosted,
         location: location,

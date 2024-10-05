@@ -10,7 +10,7 @@ const Todos = () => {
 
   const getUserByUsername = async () => {
     try {
-      const response = await axios.post(`http://10.108.140.94:8080/users/name`, { name: user.name });
+      const response = await axios.post(`http://192.168.1.204:5001/users/name`, { name: user.name });
       if (response.data && response.data.length > 0) {
         const fetchedUserId = response.data[0]._id;
         setUserId(fetchedUserId);
@@ -89,7 +89,7 @@ const Todos = () => {
       let config = {
         method: 'post',
         maxBodyLength: Infinity,
-        url: 'http://10.108.140.94:8080/notes/' + userId + '/create',
+        url: 'http://192.168.1.204:5001/notes/' + userId + '/create',
         data: {
           title,
           description: '',
