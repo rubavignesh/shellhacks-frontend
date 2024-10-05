@@ -1,155 +1,55 @@
 import React, { useState } from "react";
-import { TrashIcon, PlusIcon, XIcon } from "@heroicons/react/solid"; // Import the XIcon from heroicons
-import Layout from "./Layout"; // Adjust the path to your Layout component
-import axios from "axios";
-import { useAuth0 } from "@auth0/auth0-react";
+import { TrashIcon, PlusIcon, XIcon, MenuAlt2Icon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
+import Layout from "./Layout";
 
 const Todos = () => {
-  const { user } = useAuth0();
-  const [userId, setUserId] = useState(null);
-
-  const getUserByUsername = async () => {
-    try {
-      const response = await axios.post(`http://192.168.1.204:5001/users/name`, { name: user.name });
-      if (response.data && response.data.length > 0) {
-        const fetchedUserId = response.data[0]._id;
-        setUserId(fetchedUserId);
-        console.log("User ID:", fetchedUserId);
-        return fetchedUserId;
-      } else {
-        console.log("User not found");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching user by username:", error);
-      return null;
-    }
-  };
-  
-  // Initial state for the draggable cards
   const [cards, setCards] = useState([
     {
       id: 1,
       title: "Daily To dos",
-      tasks: ["Do Leetcode", "Cook", "Eat Food"],
+      tasks: [
+        { text: "Do Leetcode", checked: false },
+        { text: "Cook", checked: false },
+        { text: "Eat Food", checked: false },
+      ],
       position: { x: 100, y: 100 },
       defaultPosition: { x: 100, y: 100 },
     },
     {
       id: 2,
       title: "Weekly Goals",
-      tasks: ["Do Leetcode", "Cook", "Eat Food"],
+      tasks: [
+        { text: "Do Leetcode", checked: false },
+        { text: "Cook", checked: false },
+        { text: "Eat Food", checked: false },
+      ],
       position: { x: 350, y: 100 },
       defaultPosition: { x: 350, y: 100 },
     },
     {
       id: 3,
       title: "Long Term Goals",
-      tasks: ["Get a house"],
+      tasks: [{ text: "Get a house", checked: false }],
       position: { x: 600, y: 100 },
       defaultPosition: { x: 600, y: 100 },
     },
   ]);
 
-  const [activeTab, setActiveTab] = useState("todos"); // Track the active tab
+  const [activeTab, setActiveTab] = useState("todos");
   const [draggingCard, setDraggingCard] = useState(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [draggingTask, setDraggingTask] = useState(null); // Track the task being dragged
+  const [draggingType, setDraggingType] = useState(null); // Track whether card or task is being dragged
+  const [cardToRemove, setCardToRemove] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [editingCardId, setEditingCardId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
-  // Additional state for handling card removal confirmation
-  const [cardToRemove, setCardToRemove] = useState(null); // Track the card to remove
-  const [showConfirmation, setShowConfirmation] = useState(false); // Show or hide the confirmation popup
-  const [editingCardId, setEditingCardId] = useState(null); // Track which card is being edited
-  const [editingTitle, setEditingTitle] = useState(""); // Track the title being edited
+  const [openSublistIndex, setOpenSublistIndex] = useState({});
 
-  // Function to show the confirmation popup
-  const confirmRemoveCard = (cardId) => {
-    setCardToRemove(cardId);
-    setShowConfirmation(true);
-  };
-
-  // Function to actually remove the card after confirmation
-  const handleRemoveCard = () => {
-    setCards((prevCards) => prevCards.filter((card) => card.id !== cardToRemove));
-    setShowConfirmation(false);
-    setCardToRemove(null);
-  };
-
-  // Function to cancel the removal
-  const handleCancelRemove = () => {
-    setShowConfirmation(false);
-    setCardToRemove(null);
-  };
-
-  // Function to handle adding a new card
-  const addCard = async () => {
-    getUserByUsername();
-    const title = prompt("Enter a title for the new card:");
-    if (title) {
-      console.log("Starting API call to add a new card...");
-      let config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: 'http://192.168.1.204:5001/notes/' + userId + '/create',
-        data: {
-          title,
-          description: '',
-          tasks: [],
-          userId: userId
-        },
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
-        }
-      };
-
-      try {
-        const response = await axios.request(config);
-        console.log("POST response:", response.data);
-        const newCard = {
-          id: response.data.newNote._id,
-          title: response.data.newNote.title,
-          tasks: [],
-          userId: userId,
-          position: { x: 100 + cards.length * 150, y: 100 },
-          defaultPosition: { x: 100 + cards.length * 150, y: 100 },
-        };
-        setCards([...cards, newCard]);
-      } catch (error) {
-        console.error('Error adding card:', error);
-      }
-    }
-  };
-
-  // Function to handle adding a task
-  const addTask = (cardId) => {
-    const newTask = prompt("Enter a new task:");
-    if (newTask) {
-      setCards((prevCards) =>
-        prevCards.map((card) =>
-          card.id === cardId
-            ? { ...card, tasks: [...card.tasks, newTask] }
-            : card
-        )
-      );
-    }
-  };
-
-  // Function to handle removing a task
-  const removeTask = (cardId, taskIndex) => {
-    setCards((prevCards) =>
-      prevCards.map((card) =>
-        card.id === cardId
-          ? {
-              ...card,
-              tasks: card.tasks.filter((_, index) => index !== taskIndex),
-            }
-          : card
-      )
-    );
-  };
-
-  // Function to handle the drag start
-  const handleDragStart = (event, card) => {
+  const handleCardDragStart = (event, card) => {
+    if (draggingType === "task") return; // Don't drag the card when dragging a task
+    setDraggingType("card"); // Set type to card dragging
     setDraggingCard(card.id);
     setOffset({
       x: event.clientX - card.position.x,
@@ -157,9 +57,8 @@ const Todos = () => {
     });
   };
 
-  // Function to handle dragging movement
-  const handleDrag = (event) => {
-    if (draggingCard !== null) {
+  const handleCardDrag = (event) => {
+    if (draggingCard !== null && draggingType === "card") {
       const updatedCards = cards.map((card) => {
         if (card.id === draggingCard) {
           return {
@@ -176,30 +75,26 @@ const Todos = () => {
     }
   };
 
-  // Function to handle drag end and check boundaries
-  const handleDragEnd = () => {
-    if (draggingCard !== null) {
+  const handleCardDragEnd = () => {
+    if (draggingCard !== null && draggingType === "card") {
       const card = cards.find((card) => card.id === draggingCard);
 
-      // Calculate the actual card width and height based on the content
-      const cardWidth = 200; // Set the exact width of your card
-      const cardHeight = 80 + card.tasks.length * 24; // Adjust height based on the tasks
+      const cardWidth = 200;
+      const cardHeight = 80 + card.tasks.length * 24;
 
-      // Get the viewport dimensions
       const containerWidth = window.innerWidth;
       const containerHeight = window.innerHeight;
-      const footerHeight = 64; // Assuming footer height is 64px, adjust this value accordingly
+      const footerHeight = 64;
 
-      // Check if the card is out of bounds including footer
       const outOfBoundsLeft = card.position.x < 0;
       const outOfBoundsRight = card.position.x + cardWidth > containerWidth;
       const outOfBoundsTop = card.position.y < 0;
-      const outOfBoundsBottom = card.position.y + cardHeight > containerHeight - footerHeight;
+      const outOfBoundsBottom =
+        card.position.y + cardHeight > containerHeight - footerHeight;
 
       const isOutOfBounds =
         outOfBoundsLeft || outOfBoundsRight || outOfBoundsTop || outOfBoundsBottom;
 
-      // If out of bounds, reset to default position
       if (isOutOfBounds) {
         setCards((prevCards) =>
           prevCards.map((c) =>
@@ -208,23 +103,15 @@ const Todos = () => {
         );
       }
 
-      // Stop dragging
       setDraggingCard(null);
+      setDraggingType(null); // Reset dragging type
     }
   };
 
-  // Function to enable title editing
-  const enableEditTitle = (cardId, title) => {
-    setEditingCardId(cardId);
-    setEditingTitle(title);
-  };
-
-  // Function to handle title change
   const handleTitleChange = (e) => {
     setEditingTitle(e.target.value);
   };
 
-  // Function to save the edited title
   const saveTitle = (cardId) => {
     setCards((prevCards) =>
       prevCards.map((card) =>
@@ -234,13 +121,150 @@ const Todos = () => {
     setEditingCardId(null);
   };
 
+  const enableEditTitle = (cardId, title) => {
+    setEditingCardId(cardId);
+    setEditingTitle(title);
+  };
+
+  const confirmRemoveCard = (cardId) => {
+    setCardToRemove(cardId);
+    setShowConfirmation(true);
+  };
+
+  const handleRemoveCard = () => {
+    setCards((prevCards) => prevCards.filter((card) => card.id !== cardToRemove));
+    setShowConfirmation(false);
+    setCardToRemove(null);
+  };
+
+  const handleCancelRemove = () => {
+    setShowConfirmation(false);
+    setCardToRemove(null);
+  };
+
+  const addCard = () => {
+    const title = prompt("Enter a title for the new card:");
+    if (title) {
+      const newCard = {
+        id: cards.length + 1,
+        title,
+        tasks: [],
+        position: { x: 100 + cards.length * 150, y: 100 },
+        defaultPosition: { x: 100 + cards.length * 150, y: 100 },
+      };
+      setCards([...cards, newCard]);
+    }
+  };
+
+  const removeTask = (cardId, taskIndex) => {
+    setCards((prevCards) =>
+      prevCards.map((card) =>
+        card.id === cardId
+          ? { ...card, tasks: card.tasks.filter((_, index) => index !== taskIndex) }
+          : card
+      )
+    );
+  };
+
+  const addTask = (cardId) => {
+    const newTask = prompt("Enter a new task:");
+    if (newTask) {
+      setCards((prevCards) =>
+        prevCards.map((card) =>
+          card.id === cardId
+            ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false }] }
+            : card
+        )
+      );
+    }
+  };
+
+  // Updated handleCheckboxChange function to close subtask when task is checked
+  const handleCheckboxChange = (cardId, taskIndex) => {
+    setCards((prevCards) =>
+      prevCards.map((card) => {
+        if (card.id === cardId) {
+          const updatedTasks = [...card.tasks];
+          // Toggle the checked state of the task
+          const updatedTask = {
+            ...updatedTasks[taskIndex],
+            checked: !updatedTasks[taskIndex].checked,
+          };
+
+          // Remove the task from its original position
+          updatedTasks.splice(taskIndex, 1);
+
+          // If checked, move to the end and close subtasks; if unchecked, move it back to the top
+          if (updatedTask.checked) {
+            updatedTasks.push(updatedTask);
+            // Close the subtasks (remove from openSublistIndex)
+            setOpenSublistIndex((prevState) => {
+              const newState = { ...prevState };
+              delete newState[`${cardId}-${taskIndex}`]; // Close the sublist
+              return newState;
+            });
+          } else {
+            updatedTasks.unshift(updatedTask);
+          }
+
+          return { ...card, tasks: updatedTasks };
+        }
+        return card;
+      })
+    );
+  };
+
+  const handleTaskDragStart = (e, cardId, taskIndex) => {
+    e.stopPropagation();
+    setDraggingType("task");
+    setDraggingTask({ cardId, taskIndex });
+  };
+
+  const handleTaskDrop = (cardId, taskIndex) => {
+    if (draggingTask.cardId === cardId && draggingTask.taskIndex !== taskIndex) {
+      const card = cards.find((card) => card.id === cardId);
+
+      const newTaskList = [...card.tasks];
+      const [movedTask] = newTaskList.splice(draggingTask.taskIndex, 1);
+      newTaskList.splice(taskIndex, 0, movedTask);
+
+      const newOpenSublistIndex = { ...openSublistIndex };
+      const draggedKey = `${cardId}-${draggingTask.taskIndex}`;
+      const targetKey = `${cardId}-${taskIndex}`;
+
+      // Swap open sublist states
+      const draggedSublistOpen = newOpenSublistIndex[draggedKey];
+      const targetSublistOpen = newOpenSublistIndex[targetKey];
+
+      newOpenSublistIndex[draggedKey] = targetSublistOpen;
+      newOpenSublistIndex[targetKey] = draggedSublistOpen;
+
+      setCards((prevCards) =>
+        prevCards.map((card) =>
+          card.id === cardId ? { ...card, tasks: newTaskList } : card
+        )
+      );
+      setOpenSublistIndex(newOpenSublistIndex); // Ensure subtasks follow the task swap
+      setDraggingTask(null);
+      setDraggingType(null);
+    }
+  };
+
+  const toggleSublist = (cardId, index) => {
+    const uniqueKey = `${cardId}-${index}`;
+    setOpenSublistIndex((prevState) => ({
+      ...prevState,
+      [uniqueKey]: !prevState[uniqueKey],
+    }));
+  };
+
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       <div
         className="relative w-full h-full"
         style={{ width: "100%", height: "calc(100vh - 64px)", overflow: "hidden" }}
-        onMouseMove={handleDrag}
-        onMouseUp={handleDragEnd}
+        onMouseMove={handleCardDrag}
+        onMouseUp={handleCardDragEnd}
       >
         {cards.map((card) => (
           <div
@@ -252,9 +276,8 @@ const Todos = () => {
               width: "200px",
               zIndex: draggingCard === card.id ? 1000 : 1,
             }}
-            onMouseDown={(event) => handleDragStart(event, card)}
+            onMouseDown={(event) => handleCardDragStart(event, card)}
           >
-            {/* Card Title Editing */}
             <div className="flex justify-between items-center mb-2">
               {editingCardId === card.id ? (
                 <input
@@ -281,19 +304,62 @@ const Todos = () => {
               {card.tasks.map((task, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center mb-1"
+                  className="flex flex-col mb-1"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleTaskDrop(card.id, index)}
                 >
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" />
-                    <span>{task}</span>
-                  </label>
-                  <TrashIcon
-                    className="h-5 w-5 text-red-500 cursor-pointer"
-                    onClick={() => removeTask(card.id, index)}
-                  />
+                  <div className="flex justify-between items-center">
+                    <div
+                      className="cursor-move mr-2"
+                      draggable
+                      onDragStart={(e) => handleTaskDragStart(e, card.id, index)}
+                    >
+                      <MenuAlt2Icon className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <label className="flex items-center justify-start w-full">
+                      <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={task.checked}
+                        onChange={() => handleCheckboxChange(card.id, index)}
+                      />
+                      <span className={`text-left ${task.checked ? "line-through" : ""}`}>
+                        {task.text}
+                      </span>
+                    </label>
+
+                    {openSublistIndex[`${card.id}-${index}`] ? (
+                      <ChevronUpIcon
+                        className="h-5 w-5 cursor-pointer"
+                        onClick={() => toggleSublist(card.id, index)}
+                      />
+                    ) : (
+                      <ChevronDownIcon
+                        className="h-5 w-5 cursor-pointer"
+                        onClick={() => toggleSublist(card.id, index)}
+                      />
+                    )}
+
+                    <TrashIcon
+                      className="h-5 w-5 text-red-500 cursor-pointer"
+                      onClick={() => removeTask(card.id, index)}
+                    />
+                  </div>
+
+                  {openSublistIndex[`${card.id}-${index}`] && (
+                    <div className="ml-8 mt-2">
+                      <ul className="list-decimal text-sm">
+                        <li>Test 1</li>
+                        <li>Test 2</li>
+                        <li>Test 3</li>
+                        <li>Test 4</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+
             <div
               className="flex justify-center mt-3 cursor-pointer text-center"
               onClick={() => addTask(card.id)}
@@ -303,7 +369,6 @@ const Todos = () => {
           </div>
         ))}
 
-        {/* Add New Card Button */}
         <div className="flex justify-center mt-8">
           <button
             onClick={addCard}
@@ -313,11 +378,10 @@ const Todos = () => {
           </button>
         </div>
 
-        {/* Confirmation Popup */}
         {showConfirmation && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded shadow-lg text-center">
-              <h3 className="text-lg mb-4">Are you sure you want to remove this note?</h3>
+              <h3 className="text-lg mb-4">Are you sure you want to remove this card?</h3>
               <div className="flex justify-center space-x-4">
                 <button
                   onClick={handleRemoveCard}
