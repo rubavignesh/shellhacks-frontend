@@ -34,7 +34,7 @@ function App() {
         try {
           console.log("Starting API call to check user...");
           const response = await axios.post(
-            `http://192.168.1.204:5001/users/name`,
+            `http://192.168.1.247:5001/users/name`,
             { name: user.name },
             { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS" } }
           );
@@ -64,7 +64,7 @@ function App() {
       try {
         console.log("Registering user...");
         const postResponse = await axios.post(
-          'http://192.168.1.204:5001/users/register',
+          'http://192.168.1.247:5001/users/register',
           { name: user.name, email: user.email, thought: "" },
           { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS" } }
         );
