@@ -9,6 +9,22 @@ const Job = () => {
   const [datePosted, setDatePosted] = useState("Any time"); // State for date posted
   const [experienceLevel, setExperienceLevel] = useState("Internship"); // State for experience level
 
+  const handleSearch = async () => {
+    try {
+      const response = await axios.post("http://192.168.1.247:5001/jobs/search", {
+        jobTitle: preferredRole,
+        postingTime: datePosted,
+        location: location,
+        experienceLevel: experienceLevel,
+      });
+      const { linkedInLink } = response.data;
+      console.log("LinkedIn Link:", linkedInLink);
+      window.open(linkedInLink, "_blank");
+    } catch (error) {
+      console.error("Error fetching LinkedIn search URL:", error);
+    }
+  };
+
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       <div className="max-w-4xl mx-auto p-4 h-full overflow-y-auto"> {/* Center content and control width */}

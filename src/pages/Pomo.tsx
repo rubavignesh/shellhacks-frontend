@@ -38,7 +38,7 @@ const Pomo = () => {
   useEffect(() => {
     let clockedInterval = null;
     let breakInterval = null;
-
+    
     if (isRunning && mode === "work") {
         clockedInterval = setInterval(() => {
             setClockedInTime((prevTime) => prevTime + 1);
@@ -124,6 +124,7 @@ const Pomo = () => {
   return (
     <div id="pomodoro" className="App flex flex-col min-h-screen overflow-hidden">
       {/* Sidebar */}
+      
       <div className="bg-[#262526] h-full fixed hidden lg:block" style={{ width: "250px" }}>
         <SideBar setActiveTab={setActiveTab} /> {/* Pass setActiveTab prop */}
       </div>

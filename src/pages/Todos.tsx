@@ -1,40 +1,80 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { TrashIcon, PlusIcon, XIcon, MenuAlt2Icon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import Layout from "./Layout";
+import { UserContext } from "../App";
+import axios from "axios";
 
 const Todos = () => {
+  
+  const { userId } = useContext(UserContext);
   const [cards, setCards] = useState([
-    {
-      id: 1,
-      title: "Daily To dos",
-      tasks: [
-        { text: "Do Leetcode", checked: false, subtasks: null },
-        { text: "Cook", checked: false, subtasks: null },
-        { text: "Eat Food", checked: false, subtasks: null },
-      ],
-      position: { x: 100, y: 100 },
-      defaultPosition: { x: 100, y: 100 },
-    },
-    {
-      id: 2,
-      title: "Weekly Goals",
-      tasks: [
-        { text: "Do Leetcode", checked: false, subtasks: null },
-        { text: "Cook", checked: false, subtasks: null },
-        { text: "Eat Food", checked: false, subtasks: null },
-      ],
-      position: { x: 350, y: 100 },
-      defaultPosition: { x: 350, y: 100 },
-    },
-    {
-      id: 3,
-      title: "Long Term Goals",
-      tasks: [{ text: "Get a house", checked: false, subtasks: null }],
-      position: { x: 600, y: 100 },
-      defaultPosition: { x: 600, y: 100 },
-    },
+    // {
+    //   id: 1,
+    //   title: "Daily To dos",
+    //   tasks: [
+    //     { text: "Do Leetcode", checked: false },
+    //     { text: "Cook", checked: false },
+    //     { text: "Eat Food", checked: false },
+    //   ],
+    //   position: { x: 100, y: 100 },
+    //   defaultPosition: { x: 100, y: 100 },
+    // },
+    // {
+    //   id: 2,
+    //   title: "Weekly Goals",
+    //   tasks: [
+    //     { text: "Do Leetcode", checked: false },
+    //     { text: "Cook", checked: false },
+    //     { text: "Eat Food", checked: false },
+    //   ],
+    //   position: { x: 350, y: 100 },
+    //   defaultPosition: { x: 350, y: 100 },
+    // },
+    // {
+    //   id: 3,
+    //   title: "Long Term Goals",
+    //   tasks: [{ text: "Get a house", checked: false }],
+    //   position: { x: 600, y: 100 },
+    //   defaultPosition: { x: 600, y: 100 },
+    // },
   ]);
 
+
+  useEffect(() => {
+    // Fetch the current user's data when the component mounts
+    const fetchNoteData = async () => {
+      try {
+        const response = await axios.get(`http://192.168.1.247:5001/notes/user/${userId}`); // Replace with your actual API endpoint
+        console.log("Notes data:", response.data);
+        const todos = response.data.notes.map((note, index) => ({
+          noteId: note._id,
+          id: index + 1, // Assigning a unique ID based on the index
+          title: note.title,
+          tasks: note.tasks.map(task => ({
+              text: task.task, // Mapping task text
+              checked: task.completed // Mapping completed status
+          })),
+          position: { 
+            x: 100 + (index % 3) * 250, // Calculate x based on column (0, 1, 2)
+            y: 100 + Math.floor(index / 3) * 150 // Calculate y based on row
+        }, 
+        defaultPosition: { 
+            x: 100 + (index % 3) * 250, 
+            y: 100 + Math.floor(index / 3) * 150 
+        } 
+      }));
+      console.log("Todos:", todos);
+      setCards(todos);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchNoteData();
+  }, [userId]);
+
+
+  
   const [activeTab, setActiveTab] = useState("todos");
   const [draggingCard, setDraggingCard] = useState(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -131,28 +171,40 @@ const Todos = () => {
     setShowConfirmation(true);
   };
 
-  const handleRemoveCard = () => {
-    setCards((prevCards) => prevCards.filter((card) => card.id !== cardToRemove));
-    setShowConfirmation(false);
-    setCardToRemove(null);
-  };
+    // Remove the card with the specified ID
+    const handleRemoveCard = async () => {
+      try {
+        await axios.delete(`http://192.168.1.247:5001/notes/${cardToRemove}`); // Replace with your actual API endpoint
+        setCards((prevCards) => prevCards.filter((card) => card.id !== cardToRemove));
+        setShowConfirmation(false);
+        setCardToRemove(null);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error deleting card:", error);
+      }
+    };
 
   const handleCancelRemove = () => {
     setShowConfirmation(false);
     setCardToRemove(null);
   };
 
-  const addCard = () => {
+  const addCard = async () => {
     const title = prompt("Enter a title for the new card:");
     if (title) {
-      const newCard = {
-        id: cards.length + 1,
-        title,
-        tasks: [],
-        position: { x: 100 + cards.length * 150, y: 100 },
-        defaultPosition: { x: 100 + cards.length * 150, y: 100 },
-      };
-      setCards([...cards, newCard]);
+      try {
+        const response = await axios.post(`http://192.168.1.247:5001/notes/${userId}/create`, { title: title }); // Replace with your actual API endpoint
+        const newCard = {
+          id: response.data.id,
+          title,
+          tasks: [],
+          position: { x: 100 + cards.length * 150, y: 100 },
+          defaultPosition: { x: 100 + cards.length * 150, y: 100 },
+        };
+        setCards([...cards, newCard]);
+      } catch (error) {
+        console.error("Error adding new card:", error);
+      }
     }
   };
 
@@ -165,19 +217,42 @@ const Todos = () => {
       )
     );
   };
-
-  const addTask = (cardId) => {
+  const addTask = async (cardId) => {
     const newTask = prompt("Enter a new task:");
     if (newTask) {
-      setCards((prevCards) =>
-        prevCards.map((card) =>
+      try {
+        console.log("Adding new task:", newTask, cardId);
+        const response = await axios.post(`http://192.168.1.247:5001/tasks/create`, {
+          noteId: cardId,
+          task: newTask,
+        });
+        console.log("New task response:", response.data);
+        const updatedCards = cards.map((card) =>
           card.id === cardId
             ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false, subtasks: null }] }
             : card
-        )
-      );
+        );
+        setCards(updatedCards);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error adding new task:", error);
+      }
     }
   };
+
+  // const addTask = (cardId) => {
+
+  //   const newTask = prompt("Enter a new task:");
+  //   if (newTask) {
+  //     setCards((prevCards) =>
+  //       prevCards.map((card) =>
+  //         card.id === cardId
+  //           ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false }] }
+  //           : card
+  //       )
+  //     );
+  //   }
+  // };
 
   // Generate subtasks (for now static, but will be dynamic from backend in the future)
   const generateSubtasks = (cardId, taskIndex) => {
@@ -315,7 +390,7 @@ const Todos = () => {
               )}
               <XIcon
                 className="h-5 w-5 text-red-500 cursor-pointer"
-                onClick={() => confirmRemoveCard(card.id)}
+                onClick={() => confirmRemoveCard(card.noteId)}
               />
             </div>
             <div className="tasks-list">
@@ -388,7 +463,7 @@ const Todos = () => {
 
             <div
               className="flex justify-center mt-3 cursor-pointer text-center"
-              onClick={() => addTask(card.id)}
+              onClick={() => addTask(card.noteId)}
             >
               <PlusIcon className="h-5 w-5 text-gray-700" />
             </div>

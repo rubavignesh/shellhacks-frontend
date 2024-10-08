@@ -1,16 +1,44 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Layout from "./Layout"; // Adjust the import path according to your structure
+import axios from "axios";
+import { UserContext } from "../App";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("settings"); // Track the active tab
-  const [currentTagline, setCurrentTagline] = useState("You miss 100% of the shots you don't take"); // Current tagline
+  const [currentTagline, setCurrentTagline] = useState(""); // Current tagline
   const [newTagline, setNewTagline] = useState(""); // State for the new tagline input
+  const { userId } = useContext(UserContext);
 
+  useEffect(() => {
+    // Fetch the current user's data when the component mounts
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`http://192.168.1.247:5001/users/${userId}`); // Replace with your actual API endpoint
+        setCurrentTagline(response.data.thought);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+  
   // Function to handle updating the tagline
-  const handleUpdateTagline = () => {
+  const handleUpdateTagline = async () => {
     if (newTagline.trim() !== "") {
-      setCurrentTagline(newTagline);
-      setNewTagline(""); // Clear the input field after updating
+      try {
+        const response = await axios.put(`http://192.168.1.247:5001/users/${userId}/thought`, {
+          thought: newTagline
+        });
+        
+        if (response.data.user) {
+          setCurrentTagline(response.data.user.thought);
+          setNewTagline(""); // Clear the input field after updating
+        }
+      } catch (error) {
+        console.error("Error updating tagline:", error);
+        // Handle error (e.g., show an error message to the user)
+      }
     }
   };
 

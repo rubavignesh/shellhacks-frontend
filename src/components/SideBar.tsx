@@ -4,13 +4,14 @@ import LogoImage from "../assets/icons/Goalden_LogoSB.png"; // Import the logo i
 import { Link } from "react-router-dom";
 import YouTube from 'react-youtube'; // Import YouTube player
 import "@fortawesome/fontawesome-free/css/all.min.css"; // Import Font Awesome styles
-
+import { useAuth0 } from '@auth0/auth0-react';
 interface SideBarProps {
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
   const fixedWidth = 250; // Set your desired fixed width here
+  const { user, isAuthenticated } = useAuth0(); // Destructure user and isAuthenticated from useAuth0
 
   // Sanitize playlist ID if it has "start_radio=1" or other query parameters
   const sanitizePlaylistId = (id: string) => {
@@ -145,12 +146,12 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
 
       {/* Profile Picture and Greeting */}
       <img
-        src={BitooImage}
+        src={isAuthenticated ? user?.picture : BitooImage}
         alt="Profile"
         className="rounded-full w-20 h-20 mb-3 mt-16" // Adjust the margin to create space for the logo
         style={{ zIndex: 2 }}
       />
-      <h2 className="text-xl font-bold mb-3">Hi Bitoo!</h2>
+      <h2 className="text-xl font-bold mb-3">{isAuthenticated ? `Hi ${user.name}!` : "Hi, Guest!"}</h2> {/* Dynamic greeting */}
 
       {/* Horizontal line */}
       <hr className="w-3/4 border-t border-white mb-8" />
