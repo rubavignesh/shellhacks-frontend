@@ -1,30 +1,13 @@
 import React, { useState } from "react";
 import Layout from "./Layout"; // Adjust the import path according to your folder structure
-import axios from "axios";
 
 const Job = () => {
-  const [currentTab, setCurrentTab] = useState("tracker");
+  const [currentTab, setCurrentTab] = useState("suggested"); // Set default tab to "suggested"
   const [activeTab, setActiveTab] = useState("job"); // Track the active tab
   const [preferredRole, setPreferredRole] = useState(""); // State for preferred role
   const [location, setLocation] = useState(""); // State for location
   const [datePosted, setDatePosted] = useState("Any time"); // State for date posted
   const [experienceLevel, setExperienceLevel] = useState("Internship"); // State for experience level
-
-  const handleSearch = async () => {
-    try {
-      const response = await axios.post("http://10.108.140.94:8080/jobs/search", {
-        jobTitle: preferredRole,
-        postingTime: datePosted,
-        location: location,
-        experienceLevel: experienceLevel,
-      });
-      const { linkedInLink } = response.data;
-      console.log("LinkedIn Link:", linkedInLink);
-      window.open(linkedInLink, "_blank");
-    } catch (error) {
-      console.error("Error fetching LinkedIn search URL:", error);
-    }
-  };
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -32,16 +15,7 @@ const Job = () => {
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-4">
           <div className="flex space-x-6 border-b border-gray-500">
-            <button
-              className={`px-3 py-1 ${
-                currentTab === "tracker"
-                  ? "text-white border-b-2 border-white"
-                  : "text-gray-400"
-              }`}
-              onClick={() => setCurrentTab("tracker")}
-            >
-              Job Application Tracker
-            </button>
+            {/* Suggested Jobs Tab */}
             <button
               className={`px-3 py-1 ${
                 currentTab === "suggested"
@@ -52,53 +26,22 @@ const Job = () => {
             >
               Suggested Jobs
             </button>
+            
+            {/* Job Application Tracker Tab */}
+            <button
+              className={`px-3 py-1 ${
+                currentTab === "tracker"
+                  ? "text-white border-b-2 border-white"
+                  : "text-gray-400"
+              }`}
+              onClick={() => setCurrentTab("tracker")}
+            >
+              Job Application Tracker
+            </button>
           </div>
         </div>
 
         {/* Content Display */}
-        {currentTab === "tracker" && (
-          <div className="flex flex-col items-center">
-            <div className="flex w-full md:w-2/3 mb-4"> {/* Adjusted the width */}
-              <input
-                type="text"
-                placeholder="Paste your JD to add to your application list"
-                className="bg-gray-300 p-3 rounded-l w-full"
-              />
-              <button className="bg-blue-600 text-white p-3 rounded-r hover:bg-blue-700">
-                Add
-              </button>
-            </div>
-
-            <table className="w-full md:w-2/3 text-white"> {/* Adjusted the width */}
-              <thead>
-                <tr>
-                  <th className="text-left px-4 py-2">Company Name</th>
-                  <th className="text-left px-4 py-2">Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-4 py-2">Assurant</td>
-                  <td className="px-4 py-2">2025 SWE Internship</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2">Google</td>
-                  <td className="px-4 py-2">2025 SWE Internship</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2">Microsoft</td>
-                  <td className="px-4 py-2">2025 SWE Internship</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2">StateFarm</td>
-                  <td className="px-4 py-2">2025 SWE Internship</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Suggested Jobs Content */}
         {currentTab === "suggested" && (
           <div className="flex flex-col items-center">
             <div className="flex flex-col items-center mb-4 w-full">
@@ -158,13 +101,59 @@ const Job = () => {
                 </div>
               </div>
 
-              <button
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
-                onClick={handleSearch}
-              >
+              <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
                 Take me to the 🚀
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Job Application Tracker Content */}
+        {currentTab === "tracker" && (
+          <div className="flex flex-col items-center">
+            {/* Comment out the tracker content for now */}
+            {/*
+            <div className="flex w-full md:w-2/3 mb-4"> 
+              <input
+                type="text"
+                placeholder="Paste your JD to add to your application list"
+                className="bg-gray-300 p-3 rounded-l w-full"
+              />
+              <button className="bg-blue-600 text-white p-3 rounded-r hover:bg-blue-700">
+                Add
+              </button>
+            </div>
+
+            <table className="w-full md:w-2/3 text-white"> 
+              <thead>
+                <tr>
+                  <th className="text-left px-4 py-2">Company Name</th>
+                  <th className="text-left px-4 py-2">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="px-4 py-2">Assurant</td>
+                  <td className="px-4 py-2">2025 SWE Internship</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2">Google</td>
+                  <td className="px-4 py-2">2025 SWE Internship</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2">Microsoft</td>
+                  <td className="px-4 py-2">2025 SWE Internship</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2">StateFarm</td>
+                  <td className="px-4 py-2">2025 SWE Internship</td>
+                </tr>
+              </tbody>
+            </table>
+            */}
+
+            {/* Placeholder message or empty div */}
+            <p className="text-white">We will be there soon with this feature!</p>
           </div>
         )}
       </div>

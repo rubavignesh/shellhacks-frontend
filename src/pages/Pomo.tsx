@@ -31,6 +31,9 @@ const Pomo = () => {
   const [clockedInTime, setClockedInTime] = useState(0);
   const [breakTime, setBreakTime] = useState(0);
   const [customTime, setCustomTimeInput] = useState("");
+  const [hasStarted, setHasStarted] = useState(false); // Track if the timer has been started
+  const [isStartDisabled, setIsStartDisabled] = useState(false); // Track if start button should be disabled
+  const [isPaused, setIsPaused] = useState(false); // Track if the timer is paused
 
   useEffect(() => {
     let clockedInterval = null;
@@ -41,8 +44,9 @@ const Pomo = () => {
             setClockedInTime((prevTime) => prevTime + 1);
         }, 60000); // Increment every minute
     } 
-    
-    if (!isRunning) {
+
+    // Start counting break time only if the timer has started at least once
+    if (!isRunning && hasStarted) {
         breakInterval = setInterval(() => {
             setBreakTime((prevTime) => prevTime + 1);
         }, 60000); // Increment every minute when paused
@@ -52,8 +56,7 @@ const Pomo = () => {
         clearInterval(clockedInterval);
         clearInterval(breakInterval);
     };
-}, [isRunning, mode]);
-
+  }, [isRunning, mode, hasStarted]);
 
   // Format the timer display (mm:ss)
   const formatTime = (seconds) => {
@@ -92,6 +95,32 @@ const Pomo = () => {
     }
   };
 
+  const handleStart = () => {
+    setHasStarted(true); // Mark that the timer has started
+    setIsStartDisabled(true); // Disable the start button after clicking
+    setIsPaused(false); // Set paused to false when starting the timer
+    startTimer();
+  };
+
+  const handlePauseResume = () => {
+    if (isPaused) {
+      startTimer(); // Resume the timer
+      setIsPaused(false);
+    } else {
+      pauseTimer(); // Pause the timer
+      setIsPaused(true);
+    }
+  };
+
+  const handleReset = () => {
+    setHasStarted(false); // Reset the tracking of the timer start
+    setIsStartDisabled(false); // Re-enable the start button
+    setClockedInTime(0); // Reset clocked-in time
+    setBreakTime(0); // Reset break time
+    setIsPaused(false); // Reset pause state
+    resetTimer();
+  };
+
   return (
     <div id="pomodoro" className="App flex flex-col min-h-screen overflow-hidden">
       {/* Sidebar */}
@@ -116,20 +145,20 @@ const Pomo = () => {
           {/* Timer Controls */}
           <div className="flex space-x-4">
             <button
-              className={`px-6 py-3 rounded bg-green-600 hover:bg-green-700 ${isRunning ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={startTimer}
-              disabled={isRunning}
+              className={`px-6 py-3 rounded bg-green-600 hover:bg-green-700 ${isStartDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              onClick={handleStart}
+              disabled={isStartDisabled}
             >
               Start
             </button>
             <button
-              className={`px-6 py-3 rounded bg-yellow-600 hover:bg-yellow-700 ${!isRunning ? "opacity-50 cursor-not-allowed" : ""}`}
-              onClick={pauseTimer}
-              disabled={!isRunning}
+              className={`px-6 py-3 rounded bg-yellow-600 hover:bg-yellow-700 ${!hasStarted ? "opacity-50 cursor-not-allowed" : ""}`}
+              onClick={handlePauseResume}
+              disabled={!hasStarted}
             >
-              Pause
+              {isPaused ? "Resume" : "Pause"}
             </button>
-            <button className="px-6 py-3 rounded bg-red-600 hover:bg-red-700" onClick={resetTimer}>
+            <button className="px-6 py-3 rounded bg-red-600 hover:bg-red-700" onClick={handleReset}>
               Reset
             </button>
           </div>

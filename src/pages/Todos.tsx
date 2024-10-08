@@ -8,9 +8,9 @@ const Todos = () => {
       id: 1,
       title: "Daily To dos",
       tasks: [
-        { text: "Do Leetcode", checked: false },
-        { text: "Cook", checked: false },
-        { text: "Eat Food", checked: false },
+        { text: "Do Leetcode", checked: false, subtasks: null },
+        { text: "Cook", checked: false, subtasks: null },
+        { text: "Eat Food", checked: false, subtasks: null },
       ],
       position: { x: 100, y: 100 },
       defaultPosition: { x: 100, y: 100 },
@@ -19,9 +19,9 @@ const Todos = () => {
       id: 2,
       title: "Weekly Goals",
       tasks: [
-        { text: "Do Leetcode", checked: false },
-        { text: "Cook", checked: false },
-        { text: "Eat Food", checked: false },
+        { text: "Do Leetcode", checked: false, subtasks: null },
+        { text: "Cook", checked: false, subtasks: null },
+        { text: "Eat Food", checked: false, subtasks: null },
       ],
       position: { x: 350, y: 100 },
       defaultPosition: { x: 350, y: 100 },
@@ -29,7 +29,7 @@ const Todos = () => {
     {
       id: 3,
       title: "Long Term Goals",
-      tasks: [{ text: "Get a house", checked: false }],
+      tasks: [{ text: "Get a house", checked: false, subtasks: null }],
       position: { x: 600, y: 100 },
       defaultPosition: { x: 600, y: 100 },
     },
@@ -172,35 +172,54 @@ const Todos = () => {
       setCards((prevCards) =>
         prevCards.map((card) =>
           card.id === cardId
-            ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false }] }
+            ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false, subtasks: null }] }
             : card
         )
       );
     }
   };
 
-  // Updated handleCheckboxChange function to close subtask when task is checked
+  // Generate subtasks (for now static, but will be dynamic from backend in the future)
+  const generateSubtasks = (cardId, taskIndex) => {
+    setCards((prevCards) =>
+      prevCards.map((card) => {
+        if (card.id === cardId) {
+          const updatedTasks = [...card.tasks];
+          updatedTasks[taskIndex] = {
+            ...updatedTasks[taskIndex],
+            subtasks: ["Test 1", "Test 2", "Test 3", "Test 4"], // Static subtasks for now
+          };
+
+          // Set the sublist to open immediately after generating subtasks
+          setOpenSublistIndex((prevState) => ({
+            ...prevState,
+            [`${cardId}-${taskIndex}`]: true, // Open the subtasks (show the up arrow)
+          }));
+
+          return { ...card, tasks: updatedTasks };
+        }
+        return card;
+      })
+    );
+  };
+
   const handleCheckboxChange = (cardId, taskIndex) => {
     setCards((prevCards) =>
       prevCards.map((card) => {
         if (card.id === cardId) {
           const updatedTasks = [...card.tasks];
-          // Toggle the checked state of the task
           const updatedTask = {
             ...updatedTasks[taskIndex],
             checked: !updatedTasks[taskIndex].checked,
           };
 
-          // Remove the task from its original position
           updatedTasks.splice(taskIndex, 1);
 
-          // If checked, move to the end and close subtasks; if unchecked, move it back to the top
           if (updatedTask.checked) {
             updatedTasks.push(updatedTask);
-            // Close the subtasks (remove from openSublistIndex)
             setOpenSublistIndex((prevState) => {
               const newState = { ...prevState };
-              delete newState[`${cardId}-${taskIndex}`]; // Close the sublist
+              delete newState[`${cardId}-${taskIndex}`];
               return newState;
             });
           } else {
@@ -232,7 +251,6 @@ const Todos = () => {
       const draggedKey = `${cardId}-${draggingTask.taskIndex}`;
       const targetKey = `${cardId}-${taskIndex}`;
 
-      // Swap open sublist states
       const draggedSublistOpen = newOpenSublistIndex[draggedKey];
       const targetSublistOpen = newOpenSublistIndex[targetKey];
 
@@ -244,7 +262,7 @@ const Todos = () => {
           card.id === cardId ? { ...card, tasks: newTaskList } : card
         )
       );
-      setOpenSublistIndex(newOpenSublistIndex); // Ensure subtasks follow the task swap
+      setOpenSublistIndex(newOpenSublistIndex);
       setDraggingTask(null);
       setDraggingType(null);
     }
@@ -328,16 +346,25 @@ const Todos = () => {
                       </span>
                     </label>
 
-                    {openSublistIndex[`${card.id}-${index}`] ? (
-                      <ChevronUpIcon
-                        className="h-5 w-5 cursor-pointer"
-                        onClick={() => toggleSublist(card.id, index)}
-                      />
+                    {task.subtasks ? (
+                      openSublistIndex[`${card.id}-${index}`] ? (
+                        <ChevronUpIcon
+                          className="h-5 w-5 cursor-pointer"
+                          onClick={() => toggleSublist(card.id, index)}
+                        />
+                      ) : (
+                        <ChevronDownIcon
+                          className="h-5 w-5 cursor-pointer"
+                          onClick={() => toggleSublist(card.id, index)}
+                        />
+                      )
                     ) : (
-                      <ChevronDownIcon
-                        className="h-5 w-5 cursor-pointer"
-                        onClick={() => toggleSublist(card.id, index)}
-                      />
+                      <button
+                        className="text-xs text-gray-500"
+                        onClick={() => generateSubtasks(card.id, index)}
+                      >
+                        📋
+                      </button>
                     )}
 
                     <TrashIcon
@@ -346,13 +373,12 @@ const Todos = () => {
                     />
                   </div>
 
-                  {openSublistIndex[`${card.id}-${index}`] && (
+                  {openSublistIndex[`${card.id}-${index}`] && task.subtasks && (
                     <div className="ml-8 mt-2">
                       <ul className="list-decimal text-sm">
-                        <li>Test 1</li>
-                        <li>Test 2</li>
-                        <li>Test 3</li>
-                        <li>Test 4</li>
+                        {task.subtasks.map((subtask, subIndex) => (
+                          <li key={subIndex}>{subtask}</li>
+                        ))}
                       </ul>
                     </div>
                   )}

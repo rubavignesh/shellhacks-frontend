@@ -35,12 +35,12 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
     localStorage.setItem('isPlaying', JSON.stringify(isPlaying));
   }, [isPlaying]);
 
-  // Retrieve the playing state from localStorage and play the video if needed
+  // Retrieve the playing state from localStorage but do not autoplay
   useEffect(() => {
     const savedIsPlaying = JSON.parse(localStorage.getItem('isPlaying') || "false");
     if (savedIsPlaying && playerRef.current) {
-      playerRef.current.playVideo();
-      setIsPlaying(true);
+      playerRef.current.pauseVideo(); // Ensure that video is paused initially
+      setIsPlaying(false);
     }
   }, []);
 
@@ -49,7 +49,7 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
     height: '0', // Hide the video
     width: '0',  // Hide the video
     playerVars: {
-      autoplay: 1, // Autoplay is on when loaded
+      autoplay: 0, // Disable autoplay
       listType: 'playlist',
       list: sanitizePlaylistId(playlistId), // Sanitize playlist ID for radio playlists
       mute: 1, // Start muted for autoplay to work
@@ -61,13 +61,8 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
   // Function to handle player ready state
   const onPlayerReady = (event: any) => {
     playerRef.current = event.target; // Store the player instance in the ref
-    const savedIsPlaying = JSON.parse(localStorage.getItem('isPlaying') || "false");
-
-    if (savedIsPlaying) {
-      playerRef.current.playVideo();
-      setIsPlaying(true);
-    }
     playerRef.current.setVolume(volume); // Set initial volume
+    playerRef.current.pauseVideo(); // Ensure the video is paused initially
   };
 
   // Unmute after the video has started playing
@@ -109,7 +104,12 @@ const SideBar: React.FC<SideBarProps> = ({ setActiveTab }) => {
     if (window.YT) {
       if (event.data === window.YT.PlayerState.PLAYING && playerRef.current) {
         const videoData = playerRef.current.getVideoData();
-        setCurrentSongTitle(videoData.title);
+        let fullTitle = videoData.title;
+        
+        // Extract the title before the first "|" if it exists
+        const shortTitle = fullTitle.split('|')[0].trim(); // Split by "|" and take the first part
+        setCurrentSongTitle(shortTitle); // Set the short title to the state
+
         setIsPlaying(true);
         unmutePlayer(); // Unmute when a new song starts
       }
