@@ -12,7 +12,7 @@ const Job = () => {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.post("${process.env.REACT_APP_BACKEND_URL}/jobs/search", {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/jobs/search`, {
         jobTitle: preferredRole,
         postingTime: datePosted,
         location: location,

@@ -64,7 +64,7 @@ function App() {
       try {
         console.log("Registering user...");
         const postResponse = await axios.post(
-          '${process.env.REACT_APP_BACKEND_URL}/users/register',
+          `${process.env.REACT_APP_BACKEND_URL}/users/register`,
           { name: user.name, email: user.email, thought: "" },
           { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS" } }
         );
