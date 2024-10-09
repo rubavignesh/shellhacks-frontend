@@ -44,7 +44,8 @@ const Todos = () => {
     // Fetch the current user's data when the component mounts
     const fetchNoteData = async () => {
       try {
-        const response = await axios.get(`http://192.168.1.247:5001/notes/user/${userId}`); // Replace with your actual API endpoint
+        console.log(process.env);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/notes/user/${userId}`); // Replace with your actual API endpoint
         console.log("Notes data:", response.data);
         const todos = response.data.notes.map((note, index) => ({
           noteId: note._id,
@@ -52,7 +53,9 @@ const Todos = () => {
           title: note.title,
           tasks: note.tasks.map(task => ({
               text: task.task, // Mapping task text
-              checked: task.completed // Mapping completed status
+              checked: task.completed, // Mapping completed status
+              id: task._id,
+              subtasks: task.subTasks // Mapping subtasks (if any)
           })),
           position: { 
             x: 100 + (index % 3) * 250, // Calculate x based on column (0, 1, 2)
@@ -81,7 +84,9 @@ const Todos = () => {
   const [draggingTask, setDraggingTask] = useState(null); // Track the task being dragged
   const [draggingType, setDraggingType] = useState(null); // Track whether card or task is being dragged
   const [cardToRemove, setCardToRemove] = useState(null);
+  const [taskToRemove, setTaskToRemove] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showConfirmationTask, setShowConfirmationTask] = useState(false);
   const [editingCardId, setEditingCardId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
 
@@ -170,15 +175,19 @@ const Todos = () => {
     setCardToRemove(cardId);
     setShowConfirmation(true);
   };
+  const confirmRemoveTask = (taskId) => {
+    console.log("Task ID:", taskId);
+    setTaskToRemove(taskId);
+    setShowConfirmationTask(true);
+  };
 
     // Remove the card with the specified ID
     const handleRemoveCard = async () => {
       try {
-        await axios.delete(`http://192.168.1.247:5001/notes/${cardToRemove}`); // Replace with your actual API endpoint
+        await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/notes/${cardToRemove}`); // Replace with your actual API endpoint
         setCards((prevCards) => prevCards.filter((card) => card.id !== cardToRemove));
         setShowConfirmation(false);
         setCardToRemove(null);
-        window.location.reload();
       } catch (error) {
         console.error("Error deleting card:", error);
       }
@@ -188,12 +197,16 @@ const Todos = () => {
     setShowConfirmation(false);
     setCardToRemove(null);
   };
+  const handleCancelRemoveTask = () => {
+    setShowConfirmationTask(false);
+    setTaskToRemove(null);
+  };
 
   const addCard = async () => {
     const title = prompt("Enter a title for the new card:");
     if (title) {
       try {
-        const response = await axios.post(`http://192.168.1.247:5001/notes/${userId}/create`, { title: title }); // Replace with your actual API endpoint
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/notes/${userId}/create`, { title: title }); // Replace with your actual API endpoint
         const newCard = {
           id: response.data.id,
           title,
@@ -208,74 +221,93 @@ const Todos = () => {
     }
   };
 
-  const removeTask = (cardId, taskIndex) => {
-    setCards((prevCards) =>
-      prevCards.map((card) =>
-        card.id === cardId
-          ? { ...card, tasks: card.tasks.filter((_, index) => index !== taskIndex) }
-          : card
-      )
-    );
+  // const removeTask = (cardId, taskIndex) => {
+  //   await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/tasks/${cardToRemove}`); // Replace with your actual API endpoint
+  //   setCards((prevCards) =>
+  //     prevCards.map((card) =>
+  //       card.id === cardId
+  //         ? { ...card, tasks: card.tasks.filter((_, index) => index !== taskIndex) }
+  //         : card
+  //     )
+  //   );
+  // };
+  const handleRemoveTask = async () => {
+    try {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/tasks/${taskToRemove}`); // Replace with your actual API endpoint
+      // setCards((prevCards) => prevCards.filter((card) => card.tasks._id !== taskToRemove));
+      setShowConfirmationTask(false);
+      setTaskToRemove(null);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   };
+
   const addTask = async (cardId) => {
     const newTask = prompt("Enter a new task:");
     if (newTask) {
       try {
         console.log("Adding new task:", newTask, cardId);
-        const response = await axios.post(`http://192.168.1.247:5001/tasks/create`, {
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/tasks/create`, {
           noteId: cardId,
           task: newTask,
         });
         console.log("New task response:", response.data);
+        const newTaskId = response.data.newTask._id;
+        console.log("Cards:", response.data.newTask._id);
         const updatedCards = cards.map((card) =>
           card.id === cardId
-            ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false, subtasks: null }] }
+            ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false, id: newTaskId, subtasks: null }] }
             : card
         );
         setCards(updatedCards);
-        window.location.reload();
+        console.log("Updated cards:", updatedCards);
       } catch (error) {
         console.error("Error adding new task:", error);
       }
     }
   };
-
-  // const addTask = (cardId) => {
-
-  //   const newTask = prompt("Enter a new task:");
-  //   if (newTask) {
-  //     setCards((prevCards) =>
-  //       prevCards.map((card) =>
-  //         card.id === cardId
-  //           ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false }] }
-  //           : card
-  //       )
-  //     );
-  //   }
-  // };
-
   // Generate subtasks (for now static, but will be dynamic from backend in the future)
-  const generateSubtasks = (cardId, taskIndex) => {
-    setCards((prevCards) =>
-      prevCards.map((card) => {
-        if (card.id === cardId) {
-          const updatedTasks = [...card.tasks];
-          updatedTasks[taskIndex] = {
-            ...updatedTasks[taskIndex],
-            subtasks: ["Test 1", "Test 2", "Test 3", "Test 4"], // Static subtasks for now
-          };
 
-          // Set the sublist to open immediately after generating subtasks
-          setOpenSublistIndex((prevState) => ({
-            ...prevState,
-            [`${cardId}-${taskIndex}`]: true, // Open the subtasks (show the up arrow)
-          }));
+  const generateSubtasks = async (cardId, taskIndex, taskId) => {
 
-          return { ...card, tasks: updatedTasks };
-        }
-        return card;
-      })
-    );
+    console.log("Card ID:", cardId, "Task Index:", taskIndex, "Task ID:", taskId);
+    const card = cards.find((card) => card.noteId === cardId);
+    const task = card.tasks.find((task) => task.id === taskId);
+    console.log("Task:", task);
+    if (task.subtasks && task.subtasks.length > 0) {
+      // If subtasks already exist, do not generate new ones
+      alert("Subtasks already exist for this task. Delete the existing task and recreate it.");
+      return;
+    }
+    try {
+      // Simulate an API call to fetch new subtasks
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/tasks/generate-subtasks/`, {taskId: taskId}); // Replace with your actual API endpoint
+      const newSubtasks = response.data.subTasks; // Assuming the response contains an array of subtasks
+      console.log("Response:", response.data);
+      console.log("New Subtasks:", newSubtasks);
+      setCards((prevCards) =>
+        prevCards.map((card) => {
+          if (card.id === cardId) {
+            const updatedTasks = [...card.tasks];
+            updatedTasks[taskIndex] = {
+              ...updatedTasks[taskIndex],
+              subtasks: newSubtasks, // Set the fetched subtasks
+            };
+
+            // Set the sublist to open immediately after generating subtasks
+            setOpenSublistIndex((prevState) => ({
+              ...prevState,
+              [`${cardId}-${taskIndex}`]: true, // Open the subtasks (show the up arrow)
+            }));
+
+            return { ...card, tasks: updatedTasks };
+          }
+          return card;
+        })
+      );
+    } catch (error) {
+      console.error("Error generating subtasks:", error);
+    }
   };
 
   const handleCheckboxChange = (cardId, taskIndex) => {
@@ -417,11 +449,11 @@ const Todos = () => {
                         onChange={() => handleCheckboxChange(card.id, index)}
                       />
                       <span className={`text-left ${task.checked ? "line-through" : ""}`}>
-                        {task.text}
+                        {task.text} 
                       </span>
                     </label>
 
-                    {task.subtasks ? (
+                    {task.subtasks && task.subtasks.length > 0 ? (
                       openSublistIndex[`${card.id}-${index}`] ? (
                         <ChevronUpIcon
                           className="h-5 w-5 cursor-pointer"
@@ -436,15 +468,16 @@ const Todos = () => {
                     ) : (
                       <button
                         className="text-xs text-gray-500"
-                        onClick={() => generateSubtasks(card.id, index)}
+                        onClick={() => generateSubtasks(card.noteId, index, task.id)}
                       >
                         📋
                       </button>
+                      
                     )}
 
                     <TrashIcon
                       className="h-5 w-5 text-red-500 cursor-pointer"
-                      onClick={() => removeTask(card.id, index)}
+                      onClick={() => confirmRemoveTask(task.id)}
                     />
                   </div>
 
@@ -452,7 +485,7 @@ const Todos = () => {
                     <div className="ml-8 mt-2">
                       <ul className="list-decimal text-sm">
                         {task.subtasks.map((subtask, subIndex) => (
-                          <li key={subIndex}>{subtask}</li>
+                          <li key={subIndex}>{subtask.subTask}</li>
                         ))}
                       </ul>
                     </div>
@@ -492,6 +525,28 @@ const Todos = () => {
                 </button>
                 <button
                   onClick={handleCancelRemove}
+                  className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+{showConfirmationTask && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded shadow-lg text-center">
+              <h3 className="text-lg mb-4">Are you sure you want to remove this task?</h3>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={handleRemoveTask}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={handleCancelRemoveTask}
                   className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
                 >
                   No

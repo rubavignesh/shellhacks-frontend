@@ -10,7 +10,7 @@ const Footer = () => {
     // Fetch the current user's data when the component mounts
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`http://192.168.1.247:5001/users/${userId}`); // Replace with your actual API endpoint
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/users/${userId}`); // Replace with your actual API endpoint
         setCurrentTagline(response.data.thought);
       } catch (error) {
         console.error("Error fetching user data:", error);

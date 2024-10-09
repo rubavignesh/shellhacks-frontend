@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Layout from "./Layout"; // Adjust the import path according to your folder structure
+import axios from "axios";
 
 const Job = () => {
   const [currentTab, setCurrentTab] = useState("suggested"); // Set default tab to "suggested"
@@ -11,7 +12,7 @@ const Job = () => {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.post("http://192.168.1.247:5001/jobs/search", {
+      const response = await axios.post("${process.env.REACT_APP_BACKEND_URL}/jobs/search", {
         jobTitle: preferredRole,
         postingTime: datePosted,
         location: location,
@@ -117,7 +118,7 @@ const Job = () => {
                 </div>
               </div>
 
-              <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
+              <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700" onClick={handleSearch}>
                 Take me to the 🚀
               </button>
             </div>
