@@ -21,7 +21,7 @@ const Settings = () => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [currentTagline, userId]);
   
   // Function to handle updating the tagline
   const handleUpdateTagline = async () => {

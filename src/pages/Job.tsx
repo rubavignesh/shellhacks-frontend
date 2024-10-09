@@ -19,7 +19,7 @@ const Job = () => {
         experienceLevel: experienceLevel,
       });
       const { linkedInLink } = response.data;
-      console.log("LinkedIn Link:", linkedInLink);
+      //console.log("LinkedIn Link:", linkedInLink);
       window.open(linkedInLink, "_blank");
     } catch (error) {
       console.error("Error fetching LinkedIn search URL:", error);

@@ -23,6 +23,7 @@ function App() {
 
   useEffect(() => {
     // Initialize sidebar width in localStorage if not already set
+    console.log("User...", user?.picture );
     const existingWidth = localStorage.getItem("sideBarWidth");
     if (!existingWidth) {
       localStorage.setItem("sideBarWidth", "270");
@@ -32,7 +33,7 @@ function App() {
     const checkUser = async () => {
       if (isAuthenticated && user) {
         try {
-          console.log("Starting API call to check user...");
+          // console.log("Starting API call to check user...");
           const response = await axios.post(
             `${process.env.REACT_APP_BACKEND_URL}/users/name`,
             { name: user.name },
@@ -40,18 +41,18 @@ function App() {
           );
 
           if (!response.data || response.data.length === 0) {
-            console.log("User does not exist, registering user...");
+            //console.log("User does not exist, registering user...");
             registerUser();
           } else {
-            console.log("User found:", response.data);
-            console.log("User ID:", response.data._id);
+            //console.log("User found:", response.data);
+            //console.log("User ID:", response.data._id);
             setUserId(response.data._id); // Set the userId in the UserContext
             localStorage.setItem('userId', response.data._id); // Save userId to localStorage
-            console.log("User ID set in context:", localStorage.getItem('userId'));
+            //console.log("User ID set in context:", localStorage.getItem('userId'));
           }
         } catch (error) {
           if (error.response && error.response.status === 404) {
-            console.log("User not found, proceeding to register...");
+            //console.log("User not found, proceeding to register...");
             registerUser();
           } else {
             console.error("Error checking user:", error);
@@ -62,13 +63,13 @@ function App() {
 
     const registerUser = async () => {
       try {
-        console.log("Registering user...");
+        //console.log("Registering user...");
         const postResponse = await axios.post(
           `${process.env.REACT_APP_BACKEND_URL}/users/register`,
-          { name: user.name, email: user.email, thought: "" },
+          { name: user.name, email: user.email, image: user.picture, thought: "" },
           { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS" } }
         );
-        console.log("User registered:", postResponse.data);
+        //console.log("User registered:", postResponse.data);
         setUserId(postResponse.data._id);
         localStorage.setItem('userId', postResponse.data._id);
       } catch (postError) {
@@ -77,7 +78,7 @@ function App() {
     };
 
     checkUser();
-  }, [isAuthenticated, user]); // Remove userId from dependency array to avoid re-triggering the effect
+  }, [isAuthenticated, user]); 
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');

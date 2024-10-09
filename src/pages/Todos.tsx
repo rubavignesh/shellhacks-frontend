@@ -7,46 +7,14 @@ import axios from "axios";
 const Todos = () => {
   
   const { userId } = useContext(UserContext);
-  const [cards, setCards] = useState([
-    // {
-    //   id: 1,
-    //   title: "Daily To dos",
-    //   tasks: [
-    //     { text: "Do Leetcode", checked: false },
-    //     { text: "Cook", checked: false },
-    //     { text: "Eat Food", checked: false },
-    //   ],
-    //   position: { x: 100, y: 100 },
-    //   defaultPosition: { x: 100, y: 100 },
-    // },
-    // {
-    //   id: 2,
-    //   title: "Weekly Goals",
-    //   tasks: [
-    //     { text: "Do Leetcode", checked: false },
-    //     { text: "Cook", checked: false },
-    //     { text: "Eat Food", checked: false },
-    //   ],
-    //   position: { x: 350, y: 100 },
-    //   defaultPosition: { x: 350, y: 100 },
-    // },
-    // {
-    //   id: 3,
-    //   title: "Long Term Goals",
-    //   tasks: [{ text: "Get a house", checked: false }],
-    //   position: { x: 600, y: 100 },
-    //   defaultPosition: { x: 600, y: 100 },
-    // },
-  ]);
-
+  const [cards, setCards] = useState([]);
 
   useEffect(() => {
     // Fetch the current user's data when the component mounts
     const fetchNoteData = async () => {
       try {
-        console.log(process.env);
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/notes/user/${userId}`); // Replace with your actual API endpoint
-        console.log("Notes data:", response.data);
+        // //console.log("Notes data:", response.data);
         const todos = response.data.notes.map((note, index) => ({
           noteId: note._id,
           id: index + 1, // Assigning a unique ID based on the index
@@ -66,7 +34,7 @@ const Todos = () => {
             y: 100 + Math.floor(index / 3) * 150 
         } 
       }));
-      console.log("Todos:", todos);
+      // //console.log("Todos:", todos);
       setCards(todos);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -74,7 +42,7 @@ const Todos = () => {
     };
 
     fetchNoteData();
-  }, [userId]);
+  }, [cards, userId]);
 
 
   
@@ -176,7 +144,7 @@ const Todos = () => {
     setShowConfirmation(true);
   };
   const confirmRemoveTask = (taskId) => {
-    console.log("Task ID:", taskId);
+    // //console.log("Task ID:", taskId);
     setTaskToRemove(taskId);
     setShowConfirmationTask(true);
   };
@@ -246,21 +214,21 @@ const Todos = () => {
     const newTask = prompt("Enter a new task:");
     if (newTask) {
       try {
-        console.log("Adding new task:", newTask, cardId);
+        // //console.log("Adding new task:", newTask, cardId);
         const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/tasks/create`, {
           noteId: cardId,
           task: newTask,
         });
-        console.log("New task response:", response.data);
+        // //console.log("New task response:", response.data);
         const newTaskId = response.data.newTask._id;
-        console.log("Cards:", response.data.newTask._id);
+        // //console.log("Cards:", response.data.newTask._id);
         const updatedCards = cards.map((card) =>
           card.id === cardId
             ? { ...card, tasks: [...card.tasks, { text: newTask, checked: false, id: newTaskId, subtasks: null }] }
             : card
         );
         setCards(updatedCards);
-        console.log("Updated cards:", updatedCards);
+        // //console.log("Updated cards:", updatedCards);
       } catch (error) {
         console.error("Error adding new task:", error);
       }
@@ -270,10 +238,10 @@ const Todos = () => {
 
   const generateSubtasks = async (cardId, taskIndex, taskId) => {
 
-    console.log("Card ID:", cardId, "Task Index:", taskIndex, "Task ID:", taskId);
+    //console.log("Card ID:", cardId, "Task Index:", taskIndex, "Task ID:", taskId);
     const card = cards.find((card) => card.noteId === cardId);
     const task = card.tasks.find((task) => task.id === taskId);
-    console.log("Task:", task);
+    //console.log("Task:", task);
     if (task.subtasks && task.subtasks.length > 0) {
       // If subtasks already exist, do not generate new ones
       alert("Subtasks already exist for this task. Delete the existing task and recreate it.");
@@ -283,8 +251,8 @@ const Todos = () => {
       // Simulate an API call to fetch new subtasks
       const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/tasks/generate-subtasks/`, {taskId: taskId}); // Replace with your actual API endpoint
       const newSubtasks = response.data.subTasks; // Assuming the response contains an array of subtasks
-      console.log("Response:", response.data);
-      console.log("New Subtasks:", newSubtasks);
+      //console.log("Response:", response.data);
+      //console.log("New Subtasks:", newSubtasks);
       setCards((prevCards) =>
         prevCards.map((card) => {
           if (card.id === cardId) {
